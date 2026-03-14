@@ -3,7 +3,7 @@ import { withSessionRoute, ResolvedDynamicSegments } from "@/lib/session";
 import { getUserObject, unauthorized, notFound, forbidden } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
-export const GET = withSessionRoute(
+export const POST = withSessionRoute(
   async (req, { params }: ResolvedDynamicSegments) => {
     const user = await getUserObject(req);
     if (!user) return unauthorized();
@@ -13,11 +13,14 @@ export const GET = withSessionRoute(
 
     const document = await prisma.document.findUnique({
       where: { id },
+      select: { userId: true },
     });
 
     if (!document) return notFound("Document");
     if (document.userId !== user.id) return forbidden();
 
-    return NextResponse.json(document);
+    await prisma.document.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
   },
 );
