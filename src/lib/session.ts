@@ -80,6 +80,9 @@ export async function getUserSSR(
   cookies: ReadonlyRequestCookies,
 ): Promise<UserData> {
   const found = (await cookies).get(SESSION_OPTIONS.cookieName);
+
+  // Middleware guarantees this exists on protected routes
+  // but we fallback gracefully just in case
   if (!found) return redirect("/login");
 
   const { user } = await unsealData<SessionData>(found.value, {

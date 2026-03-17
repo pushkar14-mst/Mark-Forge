@@ -16,7 +16,7 @@ import { UserData } from "@/lib/session";
 import { DocList } from "./doc-list";
 
 type Props = {
-  user: UserData;
+  user: UserData | null;
   activeDocumentId?: string;
 };
 
@@ -109,7 +109,7 @@ export function Sidebar({ user, activeDocumentId }: Props) {
         {/* User footer */}
         <div className="flex items-center justify-between px-4 py-3 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            {user.avatarUrl ? (
+            {user?.avatarUrl ? (
               <img
                 src={user.avatarUrl}
                 alt={user.name}
@@ -121,12 +121,12 @@ export function Sidebar({ user, activeDocumentId }: Props) {
                               flex items-center justify-center"
               >
                 <span className="text-[8px] font-mono text-muted-foreground uppercase">
-                  {user.name?.[0] ?? "?"}
+                  {user?.name?.[0] ?? "?"}
                 </span>
               </div>
             )}
             <span className="text-xs font-mono text-muted-foreground truncate">
-              {user.email}
+              {user?.email}
             </span>
           </div>
 

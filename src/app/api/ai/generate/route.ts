@@ -1,16 +1,11 @@
 import { withSessionRoute } from "@/lib/session";
 import { getUserObject, unauthorized, badRequest } from "@/lib/api";
-import { NextResponse } from "next/server";
 import { streamText } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { kv } from "@vercel/kv";
 import { z } from "zod";
 import { parseBody } from "@/lib/api";
 import { createHash } from "crypto";
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY!,
-});
+import { google } from "@/lib/ai";
 
 const schema = z.object({
   prompt: z.string().min(1, "Prompt is required").max(1000, "Prompt too long"),
@@ -77,7 +72,7 @@ Be concise and purposeful — no filler, no preamble, no explanations outside th
 ${documentContext ? `Here is the current document context for reference:\n\n${documentContext}` : ""}`;
 
   const result = streamText({
-    model: google("gemini-2.0-flash"),
+    model: google("gemini-3.1-flash-lite"),
     system,
     prompt,
     onFinish: async ({ text }) => {

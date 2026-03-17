@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function GET(request: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -19,6 +21,5 @@ export async function GET(request: NextRequest) {
       { status: 500 },
     );
   }
-
   return NextResponse.redirect(data.url);
 }

@@ -54,6 +54,14 @@
 - All client-side GET requests use useSWR, never raw fetch in useEffect.
 - SWR key is always the API route path string e.g. `/api/documents`.
 
+## WASM
+
+- Markdown parsing runs in a Web Worker via `useMarkdownWorker`
+- Never call the WASM parser on the main thread
+- KaTeX and Mermaid are extracted before WASM parse, restored after
+- WASM build output lives in `public/wasm/` — never edit these files manually
+- To rebuild: `cd markdown-wasm && wasm-pack build --target web --out-dir ../public/wasm`
+
 ```
 
 ---

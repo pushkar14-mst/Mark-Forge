@@ -3,6 +3,7 @@
 import { useEditor } from "@/hooks/useEditor";
 import { useDocument } from "@/hooks/useDocument";
 import { useAI } from "@/hooks/useAI";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,19 +13,19 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import { useCallback } from "react";
 import { AICommandModal } from "./ai-command-modal";
 import { Editor } from "./editor";
 import { Preview } from "./preview";
+import { RiShareLine, RiCheckLine, RiFileCopyLine } from "react-icons/ri";
 
 type Props = {
   documentId: string;
 };
 
 export function EditorShell({ documentId }: Props) {
-  const { document, loading, saving, saveError, update } =
+  const { document, loading, saving, saveError, update, toggleShare } =
     useDocument(documentId);
-  const { mode, toggle, isEdit } = useEditor();
+  const { toggle, isEdit } = useEditor();
   const {
     state: aiState,
     open: aiOpen,
@@ -32,6 +33,7 @@ export function EditorShell({ documentId }: Props) {
     generate,
     cancel,
   } = useAI();
+  const [copying, setCopying] = useState(false);
 
   const handleContentChange = useCallback(
     (content: string) => {
@@ -65,6 +67,16 @@ export function EditorShell({ documentId }: Props) {
     },
     [document, generate, update],
   );
+
+  const handleShare = useCallback(async () => {
+    const slug = await toggleShare();
+    if (slug) {
+      const url = `${window.location.origin}/share/${slug}`;
+      await navigator.clipboard.writeText(url);
+      setCopying(true);
+      setTimeout(() => setCopying(false), 2000);
+    }
+  }, [toggleShare]);
 
   if (loading) {
     return (
@@ -102,10 +114,39 @@ export function EditorShell({ documentId }: Props) {
           />
 
           <div className="flex items-center gap-4">
+            {/* Save status */}
             <span className="text-[10px] tracking-widest uppercase font-mono text-muted-foreground">
               {saving ? "saving..." : saveError ? "error" : "saved"}
             </span>
 
+            {/* Share toggle */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleShare}
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                >
+                  {copying ? (
+                    <RiCheckLine className="text-sm text-[#e63946]" />
+                  ) : document.isPublic ? (
+                    <RiFileCopyLine className="text-sm" />
+                  ) : (
+                    <RiShareLine className="text-sm" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="font-mono text-xs">
+                {copying
+                  ? "Link copied!"
+                  : document.isPublic
+                    ? "Copy share link"
+                    : "Share document"}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Mode toggle */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

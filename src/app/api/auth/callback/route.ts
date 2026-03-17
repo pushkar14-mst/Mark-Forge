@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { upsertUser } from "@/lib/auth";
 import { SESSION_OPTIONS, SessionData } from "@/lib/session";
 
@@ -9,29 +9,31 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
 
   if (!code) {
+    console.error("No code in callback — got:", request.url);
     return NextResponse.redirect(
       new URL("/login?error=no_code", process.env.NEXT_PUBLIC_APP_URL),
     );
   }
 
-  // Exchange code for session
+  const supabase = await createSupabaseServerClient();
+
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.user) {
+    console.error("OAuth exchange failed:", error?.message);
     return NextResponse.redirect(
       new URL("/login?error=oauth_failed", process.env.NEXT_PUBLIC_APP_URL),
     );
   }
 
+  console.log(data);
   const { id, email, user_metadata } = data.user;
-
   if (!email) {
     return NextResponse.redirect(
       new URL("/login?error=no_email", process.env.NEXT_PUBLIC_APP_URL),
     );
   }
 
-  // Upsert user in our DB
   const user = await upsertUser({
     id,
     email,
@@ -39,7 +41,6 @@ export async function GET(request: NextRequest) {
     avatarUrl: user_metadata?.avatar_url ?? null,
   });
 
-  // Write iron-session
   const response = NextResponse.redirect(
     new URL("/", process.env.NEXT_PUBLIC_APP_URL),
   );
