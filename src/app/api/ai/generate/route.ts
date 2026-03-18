@@ -85,8 +85,16 @@ OUTPUT RULES — follow these exactly, no exceptions:
     • Diamond:         A{Decision}
     • Circle:          A((Label))
 - Do NOT use angle-bracket nodes like A<Label> — they break the renderer.
+- IMPORTANT — special characters in labels: if a label contains parentheses, equals signs,
+  slashes, carets, colons, or math expressions, you MUST wrap the label text in double quotes:
+    A["log(x) = log_b(x)"]   ✓ correct
+    A[log(x) = log_b(x)]     ✗ breaks parser
+- When in doubt, always quote the label. Quoted labels handle virtually any text safely.
 - Keep diagrams simple and syntactically correct; prefer fewer nodes over complex broken ones.
-- One diagram per code block. Multiple diagrams = multiple fenced blocks.`;
+- One diagram per code block. Multiple diagrams = multiple fenced blocks.
+
+# IMPORTANT RULE : GENERATE DIAGRAMS WHEN ASKED EXPLICITLY TO DO SO.
+`;
 
 export const POST = withSessionRoute(async (req) => {
   const user = await getUserObject(req);

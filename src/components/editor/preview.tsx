@@ -30,71 +30,89 @@ export function Preview({ content }: Props) {
       let processed = content;
 
       // --- KaTeX: block math $$...$$ ---
-      const blockMathMap: Record<string, string> = {};
+      // Use raw HTML div placeholders so the markdown parser never sees them as text.
+      // __double_underscores__ get processed as bold by the parser, breaking key lookup.
+      const blockMathMap: string[] = [];
       processed = processed.replace(/\$\$([^$]+)\$\$/gs, (_, expr) => {
-        const key = `__BLOCK_MATH_${Object.keys(blockMathMap).length}__`;
+        const id = blockMathMap.length;
         try {
-          blockMathMap[key] = katex.renderToString(expr.trim(), {
-            displayMode: true,
-            throwOnError: false,
-          });
+          blockMathMap.push(
+            katex.renderToString(expr.trim(), {
+              displayMode: true,
+              throwOnError: false,
+            }),
+          );
         } catch {
-          blockMathMap[key] = expr;
+          blockMathMap.push(expr);
         }
-        return key;
+        return `<div data-mfblock="${id}"></div>`;
       });
 
       // --- KaTeX: inline math $...$ ---
-      const inlineMathMap: Record<string, string> = {};
+      const inlineMathMap: string[] = [];
       processed = processed.replace(/\$([^$\n]+)\$/g, (_, expr) => {
-        const key = `__INLINE_MATH_${Object.keys(inlineMathMap).length}__`;
+        const id = inlineMathMap.length;
         try {
-          inlineMathMap[key] = katex.renderToString(expr.trim(), {
-            displayMode: false,
-            throwOnError: false,
-          });
+          inlineMathMap.push(
+            katex.renderToString(expr.trim(), {
+              displayMode: false,
+              throwOnError: false,
+            }),
+          );
         } catch {
-          inlineMathMap[key] = expr;
+          inlineMathMap.push(expr);
         }
-        return key;
+        return `<span data-mfinline="${id}"></span>`;
       });
 
       // --- Mermaid: extract before WASM parse ---
-      const mermaidMap: Record<string, string> = {};
-      processed = processed.replace(
-        /```mermaid\n([\s\S]+?)```/g,
-        (_, diagram) => {
-          const key = `__MERMAID_${Object.keys(mermaidMap).length}__`;
-          mermaidMap[key] = diagram.trim();
-          return `<div class="mermaid-placeholder" data-key="${key}" id="${key}"></div>`;
-        },
-      );
+      const mermaidMap: string[] = [];
+      processed = processed.replace(/```mermaid\n([\s\S]+?)```/g, (_, diagram) => {
+        const id = mermaidMap.length;
+        mermaidMap.push(diagram.trim());
+        return `<div class="mermaid-placeholder" data-mermaid="${id}" id="mermaid-${id}"></div>`;
+      });
 
       // --- WASM markdown parse ---
       let renderedHtml = await parse(processed);
       if (cancelled) return;
 
-      // --- Restore KaTeX placeholders ---
-      for (const [key, val] of Object.entries(blockMathMap)) {
-        renderedHtml = renderedHtml.replace(key, val);
-      }
-      for (const [key, val] of Object.entries(inlineMathMap)) {
-        renderedHtml = renderedHtml.replace(key, val);
-      }
+      // --- Restore KaTeX block placeholders ---
+      // Parser preserves raw HTML divs verbatim, but may wrap them in <p>.
+      // Strip any wrapping <p> around our block divs so display math isn't inline.
+      renderedHtml = renderedHtml.replace(
+        /<p>\s*(<div data-mfblock="(\d+)"><\/div>)\s*<\/p>/g,
+        (_, div) => div,
+      );
+      renderedHtml = renderedHtml.replace(
+        /<div data-mfblock="(\d+)"><\/div>/g,
+        (_, id) => blockMathMap[Number(id)] ?? "",
+      );
+
+      // --- Restore KaTeX inline placeholders ---
+      renderedHtml = renderedHtml.replace(
+        /<span data-mfinline="(\d+)"><\/span>/g,
+        (_, id) => inlineMathMap[Number(id)] ?? "",
+      );
 
       setHtml(renderedHtml);
 
       // --- Render mermaid diagrams after DOM update ---
-      if (Object.keys(mermaidMap).length > 0) {
+      if (mermaidMap.length > 0) {
         requestAnimationFrame(async () => {
-          for (const [key, diagram] of Object.entries(mermaidMap)) {
-            const el = window.document.getElementById(key);
+          for (let id = 0; id < mermaidMap.length; id++) {
+            const el = window.document.getElementById(`mermaid-${id}`);
             if (!el) continue;
             try {
-              const { svg } = await mermaid.render(`svg-${key}`, diagram);
+              const { svg } = await mermaid.render(`mermaid-svg-${id}`, mermaidMap[id]);
               el.innerHTML = svg;
-            } catch {
-              el.innerHTML = `<pre class="text-red-400 text-xs">Diagram error</pre>`;
+            } catch (err) {
+              // Show raw source in a code block so the user can see what went wrong
+              const escaped = mermaidMap[id]
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+              el.innerHTML = `<pre class="text-[#e63946] text-xs font-mono whitespace-pre-wrap border border-[#e63946]/30 p-3 rounded">Diagram error\n\n${escaped}</pre>`;
             }
           }
         });
