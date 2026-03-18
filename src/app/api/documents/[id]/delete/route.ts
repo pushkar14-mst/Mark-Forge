@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withSessionRoute, ResolvedDynamicSegments } from "@/lib/session";
 import { getUserObject, unauthorized, notFound, forbidden } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import getRedis from "@/lib/redis";
 
 export const POST = withSessionRoute(
   async (req, { params }: ResolvedDynamicSegments) => {
@@ -20,6 +21,8 @@ export const POST = withSessionRoute(
     if (document.userId !== user.id) return forbidden();
 
     await prisma.document.delete({ where: { id } });
+
+    await (await getRedis()).del(`docs:${user.id}`);
 
     return NextResponse.json({ success: true });
   },

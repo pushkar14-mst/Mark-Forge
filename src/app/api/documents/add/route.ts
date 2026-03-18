@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withSessionRoute } from "@/lib/session";
 import { getUserObject, unauthorized, parseBody } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import getRedis from "@/lib/redis";
 import { z } from "zod";
 
 const schema = z.object({
@@ -27,6 +28,8 @@ export const POST = withSessionRoute(async (req) => {
       content: body.content ?? "",
     },
   });
+
+  await (await getRedis()).del(`docs:${user.id}`);
 
   return NextResponse.json(document, { status: 201 });
 });

@@ -12,8 +12,6 @@ const schema = z.object({
   documentContext: z.string().max(10000).optional(),
 });
 
-const CACHE_TTL = 60 * 60; // 1 hour
-
 function hashPrompt(prompt: string, context?: string): string {
   return createHash("sha256")
     .update(`${prompt}:${context ?? ""}`)
@@ -124,7 +122,7 @@ export const POST = withSessionRoute(async (req) => {
     system: SYSTEM,
     prompt: fullPrompt,
     onFinish: async ({ text }) => {
-      await (await getRedis()).set(cacheKey, text, { EX: CACHE_TTL });
+      await (await getRedis()).set(cacheKey, text, { EX: 300 });
     },
   });
 
