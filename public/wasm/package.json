@@ -1,0 +1,15 @@
+{
+  "name": "markdown-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "markdown_wasm_bg.wasm",
+    "markdown_wasm.js",
+    "markdown_wasm.d.ts"
+  ],
+  "main": "markdown_wasm.js",
+  "types": "markdown_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
