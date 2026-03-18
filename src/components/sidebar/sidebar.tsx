@@ -11,22 +11,25 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { RiAddLine, RiLogoutBoxLine } from "react-icons/ri";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { UserData } from "@/lib/session";
 import { DocList } from "./doc-list";
 
 type Props = {
   user: UserData | null;
-  activeDocumentId?: string;
 };
 
-export function Sidebar({ user, activeDocumentId }: Props) {
+export function Sidebar({ user }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const activeDocumentId = pathname.startsWith("/document/")
+    ? pathname.split("/document/")[1]
+    : undefined;
   const { documents, loading, create, remove } = useDocumentList();
 
   const handleCreate = async () => {
     const doc = await create();
-    if (doc) router.push(`/doc/${doc.id}`);
+    if (doc) router.push(`/document/${doc.id}`);
   };
 
   const handleLogout = async () => {
@@ -38,7 +41,7 @@ export function Sidebar({ user, activeDocumentId }: Props) {
   return (
     <TooltipProvider delayDuration={400}>
       <aside
-        className="flex flex-col w-60 h-screen bg-[#080808]
+        className="flex flex-col w-60 h-screen bg-[#0d0d0d]
                         border-r border-border shrink-0"
       >
         {/* Brand */}
@@ -117,7 +120,7 @@ export function Sidebar({ user, activeDocumentId }: Props) {
               />
             ) : (
               <div
-                className="w-5 h-5 rounded-full bg-[#1a1a1a] shrink-0
+                className="w-5 h-5 rounded-full bg-[#252525] shrink-0
                               flex items-center justify-center"
               >
                 <span className="text-[8px] font-mono text-muted-foreground uppercase">

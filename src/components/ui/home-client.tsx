@@ -28,7 +28,7 @@ export default function HomeClient() {
           <p className="text-xs font-mono text-muted-foreground tracking-widest uppercase">
             No documents yet
           </p>
-          <p className="text-[10px] font-mono text-[#2a2a2a] mt-1">
+          <p className="text-[10px] font-mono text-[#888] mt-1">
             Create one from the sidebar
           </p>
         </div>

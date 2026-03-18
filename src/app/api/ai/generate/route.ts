@@ -1,7 +1,7 @@
 import { withSessionRoute } from "@/lib/session";
 import { getUserObject, unauthorized, badRequest } from "@/lib/api";
 import { streamText } from "ai";
-import { kv } from "@vercel/kv";
+import getRedis from "@/lib/redis";
 import { z } from "zod";
 import { parseBody } from "@/lib/api";
 import { createHash } from "crypto";
@@ -13,8 +13,6 @@ const schema = z.object({
 });
 
 const CACHE_TTL = 60 * 60; // 1 hour
-const SIMULATED_CHUNK_SIZE = 8; // chars per chunk
-const SIMULATED_CHUNK_DELAY = 12; // ms between chunks — feels natural
 
 function hashPrompt(prompt: string, context?: string): string {
   return createHash("sha256")
@@ -22,10 +20,11 @@ function hashPrompt(prompt: string, context?: string): string {
     .digest("hex");
 }
 
-// Turns a cached string into a simulated text stream
 function simulateStream(text: string): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   let offset = 0;
+  const CHUNK = 8;
+  const DELAY = 12;
 
   return new ReadableStream({
     async pull(controller) {
@@ -33,15 +32,61 @@ function simulateStream(text: string): ReadableStream<Uint8Array> {
         controller.close();
         return;
       }
-      const chunk = text.slice(offset, offset + SIMULATED_CHUNK_SIZE);
-      controller.enqueue(encoder.encode(chunk));
-      offset += SIMULATED_CHUNK_SIZE;
-
-      // Yield to event loop to simulate delay between chunks
-      await new Promise((res) => setTimeout(res, SIMULATED_CHUNK_DELAY));
+      controller.enqueue(encoder.encode(text.slice(offset, offset + CHUNK)));
+      offset += CHUNK;
+      await new Promise((res) => setTimeout(res, DELAY));
     },
   });
 }
+
+const SYSTEM = `\
+You are a writing assistant embedded in MarkForge, a Markdown editor that renders:
+  - Standard Markdown (headings, lists, tables, bold, italic, links, code blocks)
+  - Mathematical equations via KaTeX
+  - Diagrams via Mermaid
+
+OUTPUT RULES — follow these exactly, no exceptions:
+
+## Markdown
+- Respond only with the content itself — no preamble, no "Here is your…", no explanations.
+- Use headings, lists, tables, and fenced code blocks where they improve clarity.
+
+## Math / Equations (KaTeX)
+- Inline math:  wrap in single dollar signs  → $E = mc^2$
+- Block / display math: wrap in double dollar signs on their own lines →
+  $$
+  \\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}
+  $$
+- Use standard LaTeX notation inside the delimiters.
+- Do NOT use \\( \\) or \\[ \\] — only $ and $$ delimiters work in this renderer.
+
+## Diagrams (Mermaid)
+- Always open with \`\`\`mermaid (exactly this fence, lowercase, no spaces).
+- Close with \`\`\`.
+- Supported diagram types and their correct opening keywords:
+    • Flowchart:      flowchart TD  (or LR / BT / RL)
+    • Sequence:       sequenceDiagram
+    • Class:          classDiagram
+    • State:          stateDiagram-v2
+    • ER diagram:     erDiagram
+    • Gantt:          gantt
+    • Pie chart:      pie title My Chart
+    • Git graph:      gitGraph
+- Arrow / edge syntax for flowcharts:
+    • Solid arrow:     A --> B
+    • Solid line:      A --- B
+    • Dotted arrow:    A -.-> B
+    • Thick arrow:     A ==> B
+    • Label on edge:   A -->|label| B
+- Node shape syntax:
+    • Rectangle:       A[Label]
+    • Rounded:         A(Label)
+    • Stadium:         A([Label])
+    • Diamond:         A{Decision}
+    • Circle:          A((Label))
+- Do NOT use angle-bracket nodes like A<Label> — they break the renderer.
+- Keep diagrams simple and syntactically correct; prefer fewer nodes over complex broken ones.
+- One diagram per code block. Multiple diagrams = multiple fenced blocks.`;
 
 export const POST = withSessionRoute(async (req) => {
   const user = await getUserObject(req);
@@ -51,32 +96,34 @@ export const POST = withSessionRoute(async (req) => {
   if (!body) return badRequest(error ?? undefined);
 
   const { prompt, documentContext } = body;
-  const cacheKey = `ai:${hashPrompt(prompt, documentContext)}`;
 
-  // Cache hit — simulate streaming so UX is consistent
-  const cached = await kv.get<string>(cacheKey);
-  if (cached) {
-    return new Response(simulateStream(cached), {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Transfer-Encoding": "chunked",
-        "X-Cache": "HIT",
-      },
-    });
+  const fullPrompt = documentContext
+    ? `Current document context:\n\n${documentContext}\n\n---\n\n${prompt}`
+    : prompt;
+
+  // Check KV cache first (non-streaming cached responses)
+  const cacheKey = `ai:${hashPrompt(prompt, documentContext)}`;
+  try {
+    const cached = await (await getRedis()).get(cacheKey);
+    if (cached) {
+      return new Response(simulateStream(cached), {
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+  } catch {
+    // KV unavailable — proceed to model
   }
 
-  const system = `You are a writing assistant embedded in MarkForge, a markdown editor.
-Your job is to generate clean, well-structured markdown content based on the user's prompt.
-Always respond in valid markdown. Use headings, lists, code blocks, and formatting where appropriate.
-Be concise and purposeful — no filler, no preamble, no explanations outside the content itself.
-${documentContext ? `Here is the current document context for reference:\n\n${documentContext}` : ""}`;
-
   const result = streamText({
-    model: google("gemini-3.1-flash-lite"),
-    system,
-    prompt,
+    model: google("gemini-2.5-flash-lite"),
+    system: SYSTEM,
+    prompt: fullPrompt,
     onFinish: async ({ text }) => {
-      await kv.set(cacheKey, text, { ex: CACHE_TTL });
+      try {
+        await (await getRedis()).set(cacheKey, text, { EX: CACHE_TTL });
+      } catch {
+        // KV unavailable — skip cache write
+      }
     },
   });
 

@@ -1,26 +1,39 @@
 import { IronSession } from "iron-session";
 import { NextResponse } from "next/server";
 import { ZodSchema } from "zod";
-import { kv } from "@vercel/kv";
 import { prisma } from "./prisma";
 import { SessionData } from "./session";
+import getRedis from "./redis";
 
 type RequestWithSession = Request & { session: IronSession<SessionData> };
 
 // Validates session and returns full user object — use in every protected route
 export async function getUserObject(req: RequestWithSession) {
   try {
-    const key = `user:${req.session.user.id}`;
-    const cached = await kv.get<string>(key);
-    if (cached) return JSON.parse(cached);
+    const userId = req.session?.user?.id;
+    if (!userId) return null;
+
+    const key = `user:${userId}`;
+
+    try {
+      const cached = await (await getRedis()).get(key);
+      if (cached) return JSON.parse(cached);
+    } catch {
+      // Redis unavailable — fall through to DB
+    }
 
     const user = await prisma.user.findUnique({
-      where: { id: req.session.user.id },
+      where: { id: userId },
     });
 
     if (!user) return null;
 
-    await kv.set(key, JSON.stringify(user), { ex: 60 * 5 });
+    try {
+      await (await getRedis()).set(key, JSON.stringify(user), { EX: 300 });
+    } catch {
+      // Redis unavailable — skip cache write
+    }
+
     return user;
   } catch {
     return null;
@@ -77,3 +90,4 @@ export function badRequest(message = "Bad request") {
 export function serverError(message = "Internal server error") {
   return NextResponse.json({ error: message }, { status: 500 });
 }
+

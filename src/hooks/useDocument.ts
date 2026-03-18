@@ -19,7 +19,7 @@ export function useDocumentList() {
   const { data, error, isLoading } = useSWR<DocumentMeta[]>("/api/documents");
 
   const create = useCallback(
-    async (title?: string): Promise<DocumentMeta | null> => {
+    async (title?: string): Promise<Document | null> => {
       try {
         const res = await fetch("/api/documents/add", {
           method: "POST",
@@ -27,7 +27,9 @@ export function useDocumentList() {
           body: JSON.stringify({ title: title ?? "Untitled" }),
         });
         if (!res.ok) throw new Error();
-        const doc = await res.json();
+        const doc: Document = await res.json();
+        // Pre-populate individual doc cache so EditorShell renders immediately
+        mutate(`/api/documents/${doc.id}`, doc, false);
         // Optimistically prepend to list
         mutate(
           "/api/documents",

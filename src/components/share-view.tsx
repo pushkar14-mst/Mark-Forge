@@ -33,7 +33,7 @@ export function ShareView({ slug }: Props) {
           >
             Document not found
           </span>
-          <span className="text-[10px] font-mono text-[#2a2a2a]">
+          <span className="text-[10px] font-mono text-[#888]">
             This link may have expired or been made private.
           </span>
         </div>

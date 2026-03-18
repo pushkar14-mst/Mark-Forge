@@ -35,7 +35,7 @@ export function AICommandModal({ state, onSubmit, onClose }: Props) {
       }}
     >
       <DialogContent
-        className="max-w-xl bg-[#0f0f0f] border-border p-0 gap-0
+        className="max-w-xl bg-[#111111] border-border p-0 gap-0
                    font-mono shadow-2xl"
       >
         <DialogHeader className="px-4 pt-4 pb-3">
@@ -59,7 +59,7 @@ export function AICommandModal({ state, onSubmit, onClose }: Props) {
             placeholder="Describe what to generate..."
             className="bg-transparent border-none shadow-none px-0
                        font-mono text-sm placeholder:text-muted-foreground
-                       focus-visible:ring-0 h-auto text-foreground"
+                       focus-visible:ring-0 h-auto text-muted-foreground"
             spellCheck={false}
           />
         </div>

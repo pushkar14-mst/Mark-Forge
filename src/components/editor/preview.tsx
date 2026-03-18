@@ -119,8 +119,8 @@ export function Preview({ content }: Props) {
                    prose-p:text-[#aaa] prose-p:leading-7
                    prose-code:text-[#e63946] prose-code:font-mono prose-code:text-xs
                    prose-strong:text-[#e0e0e0]
-                   prose-blockquote:border-[#e63946] prose-blockquote:text-[#666]
-                   prose-hr:border-[#1a1a1a]"
+                   prose-blockquote:border-[#e63946] prose-blockquote:text-[#999]
+                   prose-hr:border-[#2a2a2a]"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>

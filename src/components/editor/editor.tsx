@@ -63,9 +63,9 @@ export function Editor({ content, onChange, onAITrigger }: Props) {
         onKeyDown={handleKeyDown}
         spellCheck={false}
         className="w-full h-full min-h-full resize-none bg-transparent outline-none
-                   text-[#c9c9c9] font-mono text-sm leading-7
+                   text-[#d4d4d4] font-mono text-sm leading-7
                    px-[max(2rem,calc(50%-36rem))] py-12
-                   placeholder:text-[#2a2a2a] caret-[#e63946]"
+                   placeholder:text-[#555] caret-[#e63946]"
         placeholder={
           "Start writing...\n\nType /ai on a new line to generate content."
         }

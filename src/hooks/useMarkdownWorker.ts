@@ -10,10 +10,10 @@ export function useMarkdownWorker() {
   const pendingRef = useRef<Map<string, PendingResolve>>(new Map());
 
   useEffect(() => {
-    const worker = new Worker(
-      new URL("../workers/markdown.worker.ts", import.meta.url),
-      { type: "module" },
-    );
+    // Plain string URL — worker lives in public/, bundler never touches it
+    const worker = new Worker("/workers/markdown.worker.js", {
+      type: "module",
+    });
 
     worker.onmessage = (
       e: MessageEvent<{

@@ -47,10 +47,10 @@ export function DocItem({ document, isActive, onDelete }: Props) {
           "group flex items-center justify-between px-2 py-1.5 rounded-sm cursor-pointer",
           "transition-colors duration-150",
           isActive
-            ? "bg-[#141414] text-foreground"
-            : "text-muted-foreground hover:bg-[#0f0f0f] hover:text-foreground",
+            ? "bg-[#1e1e1e] text-foreground border-l-2 border-[#e63946]"
+            : "text-[#999] hover:bg-[#161616] hover:text-foreground border-l-2 border-transparent",
         )}
-        onClick={() => router.push(`/doc/${document.id}`)}
+        onClick={() => router.push(`/document/${document.id}`)}
       >
         <div className="flex items-center gap-2 min-w-0">
           {document.isPublic ? (
@@ -87,7 +87,7 @@ export function DocItem({ document, isActive, onDelete }: Props) {
 
       {/* Delete confirmation dialog */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="max-w-sm bg-[#0f0f0f] border-border p-0 gap-0 font-mono">
+        <DialogContent className="max-w-sm bg-[#111111] border-border p-0 gap-0 font-mono">
           <DialogHeader className="px-4 pt-4 pb-3">
             <DialogTitle
               className="text-xs tracking-widest uppercase
