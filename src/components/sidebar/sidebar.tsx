@@ -1,6 +1,6 @@
 "use client";
 
-import { useDocumentList } from "@/hooks/useDocument";
+import { DocumentMeta, useDocumentList } from "@/hooks/useDocument";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -14,6 +14,8 @@ import { RiAddLine, RiLogoutBoxLine } from "react-icons/ri";
 import { useRouter, usePathname } from "next/navigation";
 import { UserData } from "@/lib/session";
 import { DocList } from "./doc-list";
+import useSWR from "swr";
+import { useEffect } from "react";
 
 type Props = {
   user: UserData | null;

@@ -15,12 +15,8 @@ export async function getUserObject(req: RequestWithSession) {
 
     const key = `user:${userId}`;
 
-    try {
-      const cached = await (await getRedis()).get(key);
-      if (cached) return JSON.parse(cached);
-    } catch {
-      // Redis unavailable — fall through to DB
-    }
+    const cached = await (await getRedis()).get(key);
+    if (cached) return JSON.parse(cached);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -28,11 +24,7 @@ export async function getUserObject(req: RequestWithSession) {
 
     if (!user) return null;
 
-    try {
-      await (await getRedis()).set(key, JSON.stringify(user), { EX: 300 });
-    } catch {
-      // Redis unavailable — skip cache write
-    }
+    await (await getRedis()).set(key, JSON.stringify(user), { EX: 300 });
 
     return user;
   } catch {
@@ -90,4 +82,3 @@ export function badRequest(message = "Bad request") {
 export function serverError(message = "Internal server error") {
   return NextResponse.json({ error: message }, { status: 500 });
 }
-

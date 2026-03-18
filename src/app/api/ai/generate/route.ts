@@ -111,15 +111,12 @@ export const POST = withSessionRoute(async (req) => {
 
   // Check KV cache first (non-streaming cached responses)
   const cacheKey = `ai:${hashPrompt(prompt, documentContext)}`;
-  try {
-    const cached = await (await getRedis()).get(cacheKey);
-    if (cached) {
-      return new Response(simulateStream(cached), {
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-      });
-    }
-  } catch {
-    // KV unavailable — proceed to model
+
+  const cached = await (await getRedis()).get(cacheKey);
+  if (cached) {
+    return new Response(simulateStream(cached), {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 
   const result = streamText({
@@ -127,11 +124,7 @@ export const POST = withSessionRoute(async (req) => {
     system: SYSTEM,
     prompt: fullPrompt,
     onFinish: async ({ text }) => {
-      try {
-        await (await getRedis()).set(cacheKey, text, { EX: CACHE_TTL });
-      } catch {
-        // KV unavailable — skip cache write
-      }
+      await (await getRedis()).set(cacheKey, text, { EX: CACHE_TTL });
     },
   });
 
