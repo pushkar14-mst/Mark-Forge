@@ -106,9 +106,8 @@ export function LoginClient() {
     setLoading(true);
 
     const url = mode === "register" ? "/api/auth/register" : "/api/auth/signin";
-    const body = mode === "register"
-      ? { email, password, name }
-      : { email, password };
+    const body =
+      mode === "register" ? { email, password, name } : { email, password };
 
     const res = await fetch(url, {
       method: "POST",
@@ -137,31 +136,49 @@ export function LoginClient() {
 
   return (
     <div className="relative flex h-screen w-full items-center justify-center bg-[#080808] overflow-hidden">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+      />
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, transparent 0%, #080808 100%)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 60% at 50% 50%, transparent 0%, #080808 100%)",
+        }}
       />
 
-      <div className={`relative z-10 flex flex-col items-center gap-8 transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+      <div
+        className={`relative z-10 flex flex-col items-center gap-8 transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+      >
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-1">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M4 26V6L16 18L28 6V26" stroke="#e63946" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M4 26V6L16 18L28 6V26"
+                stroke="#e63946"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             <span className="text-2xl font-mono font-light tracking-[0.2em] text-[#f0f0f0] uppercase">
               Mark<span className="text-[#e63946] font-normal">Forge</span>
             </span>
           </div>
-          <p className="text-[10px] font-mono tracking-[0.25em] text-[#777] uppercase">Markdown. Refined.</p>
+          <p className="text-[10px] font-mono tracking-[0.25em] text-[#777] uppercase">
+            Markdown. Refined.
+          </p>
         </div>
 
         <div className="w-px h-8 bg-[#2a2a2a]" />
 
         {/* Card */}
-        <div className="flex flex-col items-center gap-5 px-10 py-8 border border-[#2a2a2a] bg-[#0d0d0d]/90 backdrop-blur-sm" style={{ minWidth: "320px" }}>
-
+        <div
+          className="flex flex-col items-center gap-5 px-10 py-8 border border-[#2a2a2a] bg-[#0d0d0d]/90 backdrop-blur-sm"
+          style={{ minWidth: "320px" }}
+        >
           {/* Mode toggle */}
           <div className="flex w-full border border-[#2a2a2a]">
             {(["login", "register"] as Mode[]).map((m) => (
@@ -169,7 +186,9 @@ export function LoginClient() {
                 key={m}
                 onClick={() => switchMode(m)}
                 className={`flex-1 py-1.5 text-[10px] font-mono tracking-widest uppercase transition-colors ${
-                  mode === m ? "bg-[#e63946]/10 text-[#e63946]" : "text-[#888] hover:text-[#ccc]"
+                  mode === m
+                    ? "bg-[#e63946]/10 text-[#e63946]"
+                    : "text-[#888] hover:text-[#ccc]"
                 }`}
               >
                 {m === "login" ? "Sign In" : "Register"}
@@ -207,7 +226,9 @@ export function LoginClient() {
             />
 
             {err && (
-              <p className="text-[10px] font-mono text-[#e63946] text-center">{err}</p>
+              <p className="text-[10px] font-mono text-[#e63946] text-center">
+                {err}
+              </p>
             )}
 
             <Button
@@ -215,19 +236,23 @@ export function LoginClient() {
               disabled={loading}
               className="w-full h-10 bg-[#e63946] hover:bg-[#c1121f] text-[#f0f0f0] font-mono text-xs tracking-widest uppercase transition-all duration-200 rounded-none disabled:opacity-40"
             >
-              {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
+              {loading
+                ? "..."
+                : mode === "login"
+                  ? "Sign In"
+                  : "Create Account"}
             </Button>
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 w-full">
+          {/* <div className="flex items-center gap-3 w-full">
             <div className="flex-1 h-px bg-[#2a2a2a]" />
             <span className="text-[9px] font-mono text-[#777] tracking-widest uppercase">or</span>
             <div className="flex-1 h-px bg-[#2a2a2a]" />
-          </div>
+          </div> */}
 
           {/* Google OAuth */}
-          <Button
+          {/* <Button
             asChild
             className="w-full h-10 bg-transparent border border-[#333] hover:border-[#e63946] hover:bg-[#e63946]/5 text-[#bbb] hover:text-[#f0f0f0] font-mono text-xs tracking-widest uppercase transition-all duration-200 rounded-none gap-3"
           >
@@ -235,7 +260,7 @@ export function LoginClient() {
               <RiGoogleFill className="text-base shrink-0" />
               Continue with Google
             </a>
-          </Button>
+          </Button> */}
 
           <p className="text-[10px] font-mono text-[#777] text-center leading-relaxed">
             Your documents are private by default.
@@ -244,7 +269,9 @@ export function LoginClient() {
 
         <div className="flex items-center gap-3">
           <div className="w-12 h-px bg-[#2a2a2a]" />
-          <span className="text-[9px] font-mono text-[#777] tracking-widest uppercase">WASM · AI · Markdown</span>
+          <span className="text-[9px] font-mono text-[#777] tracking-widest uppercase">
+            WASM · AI · Markdown
+          </span>
           <div className="w-12 h-px bg-[#2a2a2a]" />
         </div>
       </div>

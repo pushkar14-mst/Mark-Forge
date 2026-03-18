@@ -120,7 +120,7 @@ export function EditorShell({ documentId }: Props) {
             </span>
 
             {/* Share toggle */}
-            <Tooltip>
+            {/* <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
@@ -144,7 +144,7 @@ export function EditorShell({ documentId }: Props) {
                     ? "Copy share link"
                     : "Share document"}
               </TooltipContent>
-            </Tooltip>
+            </Tooltip> */}
 
             {/* Mode toggle */}
             <Tooltip>
